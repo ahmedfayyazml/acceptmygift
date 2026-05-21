@@ -66,8 +66,7 @@
       max-height: calc(100svh - clamp(36px, 8vw, 84px));
       position: relative;
       display: grid;
-      overflow-y: auto;
-      overflow-x: hidden;
+      overflow: hidden;
       padding: clamp(22px, 5vw, 44px);
       border: 1px solid var(--border-glass);
       border-radius: 32px;
@@ -115,22 +114,36 @@
     }
 
     .placeholder.media {
-      height: clamp(150px, 34vw, 210px);
+      width: min(100%, 320px, 38svh);
+      height: auto;
       min-height: 0;
       overflow: hidden;
       padding: 0;
+    }
+
+    .placeholder.media.gift {
+      aspect-ratio: 1080 / 1330;
+    }
+
+    .placeholder.media.angry,
+    .placeholder.media.happy,
+    .placeholder.media.love {
+      aspect-ratio: 1;
     }
 
     .placeholder img {
       width: 100%;
       height: 100%;
       display: block;
-      object-fit: cover;
+      object-fit: contain;
+      object-position: center;
+      background: rgba(255, 255, 255, 0.24);
       border-radius: inherit;
     }
 
     .placeholder.gift,
-    .placeholder.happy {
+    .placeholder.happy,
+    .placeholder.love {
       background: linear-gradient(145deg, #ffe0ec, #ffd2e3);
     }
 
@@ -266,7 +279,7 @@
       opacity: 0;
       pointer-events: none;
       background: #000000;
-      object-fit: contain;
+      object-fit: cover;
     }
 
     .fullscreen-video:fullscreen {
@@ -274,6 +287,8 @@
       height: 100vh;
       opacity: 1;
       pointer-events: auto;
+      background: #000000;
+      object-fit: cover;
     }
 
     .fullscreen-video:-webkit-full-screen {
@@ -281,6 +296,8 @@
       height: 100vh;
       opacity: 1;
       pointer-events: auto;
+      background: #000000;
+      object-fit: cover;
     }
 
     .play-fallback {
@@ -323,12 +340,51 @@
         border-radius: 20px;
       }
 
+      .placeholder.media {
+        width: min(100%, 250px, 36svh);
+      }
+
       .actions {
         flex-direction: column;
       }
 
       button {
         width: 100%;
+      }
+    }
+
+    @media (max-height: 700px) {
+      body {
+        padding: 12px;
+      }
+
+      .gift-card {
+        max-height: calc(100svh - 24px);
+        padding: 18px;
+      }
+
+      .screen-inner {
+        gap: 10px;
+      }
+
+      .placeholder.media {
+        width: min(100%, 260px, 34svh);
+      }
+
+      h1 {
+        font-size: clamp(1.7rem, 6vw, 2.55rem);
+      }
+
+      h2 {
+        font-size: clamp(1.55rem, 5vw, 2.2rem);
+      }
+
+      p {
+        line-height: 1.45;
+      }
+
+      button {
+        padding: 11px 22px;
       }
     }
 
@@ -386,13 +442,22 @@
     <section class="screen" id="screen-song" data-screen="song">
       <!-- Screen 4 intentionally has no visible card content. The video below enters fullscreen. -->
     </section>
+
+    <section class="screen" id="screen-love" data-screen="love">
+      <div class="screen-inner">
+        <div class="placeholder love media">
+          <img src="WhatsApp%20Image%202026-05-21%20at%2022.15.59.jpeg" alt="Love">
+        </div>
+        <h2>I love you</h2>
+      </div>
+    </section>
   </main>
 
   <div class="play-fallback" id="play-fallback">
     <button type="button" id="play-video">Play</button>
   </div>
 
-  <video class="fullscreen-video" id="gift-video" src="IMG_1095.MP4" controls playsinline></video>
+  <video class="fullscreen-video" id="gift-video" src="IMG_1101.MP4" controls playsinline></video>
 
   <script>
     const screens = Array.from(document.querySelectorAll(".screen"));
@@ -401,6 +466,7 @@
     const playFallback = document.querySelector("#play-fallback");
     const playButton = document.querySelector("#play-video");
     let activeScreen = document.querySelector(".screen.visible");
+    let videoHasOpened = false;
 
     async function requestVideoFullscreen() {
       if (video.requestFullscreen) {
@@ -412,6 +478,7 @@
 
     async function playFullscreenVideo() {
       playFallback.classList.remove("visible");
+      videoHasOpened = true;
 
       try {
         await requestVideoFullscreen();
@@ -419,6 +486,20 @@
       } catch (error) {
         playFallback.classList.add("visible");
       }
+    }
+
+    function getFullscreenElement() {
+      return document.fullscreenElement || document.webkitFullscreenElement;
+    }
+
+    function showLoveScreen() {
+      if (!videoHasOpened || activeScreen.dataset.screen !== "song") {
+        return;
+      }
+
+      playFallback.classList.remove("visible");
+      video.pause();
+      showScreen("love");
     }
 
     function showScreen(screenName) {
@@ -445,6 +526,24 @@
 
     playButton.addEventListener("click", () => {
       playFullscreenVideo();
+    });
+
+    document.addEventListener("fullscreenchange", () => {
+      if (!getFullscreenElement()) {
+        showLoveScreen();
+      }
+    });
+
+    document.addEventListener("webkitfullscreenchange", () => {
+      if (!getFullscreenElement()) {
+        showLoveScreen();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        window.setTimeout(showLoveScreen, 120);
+      }
     });
   </script>
 </body>
